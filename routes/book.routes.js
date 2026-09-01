@@ -7,11 +7,11 @@ const { verifyJWT, verifyRole } = require('../middleware/auth');
 
 router.post('/', verifyJWT, verifyRole('librarian', 'admin'), createBook);
 router.get('/', getBooks); // Public
+router.get('/librarian/:email', verifyJWT, verifyRole('librarian', 'admin'), getLibrarianBooks);
 router.get('/:id', getBookById); // Public
 router.patch('/:id', verifyJWT, verifyRole('librarian', 'admin'), updateBook);
 router.patch('/:id/publish', verifyJWT, verifyRole('librarian'), publishBook);
 router.patch('/:id/approve', verifyJWT, verifyRole('admin'), approveBook);
 router.delete('/:id', verifyJWT, verifyRole('librarian', 'admin'), deleteBook);
-router.get('/librarian/:email', verifyJWT, verifyRole('librarian', 'admin'), getLibrarianBooks);
 
 module.exports = router;

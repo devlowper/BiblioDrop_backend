@@ -2,8 +2,7 @@ const mongoose = require('mongoose');
 
 const deliverySchema = new mongoose.Schema({
   bookId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Book',
+    type: String,
     required: true,
   },
   bookTitle: {

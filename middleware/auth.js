@@ -1,22 +1,21 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { auth } = require('../config/auth');
+const { fromNodeHeaders } = require('better-auth/node');
 
 const verifyJWT = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'Unauthorized: No token provided' });
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+    
+    if (!session || !session.user) {
+      return res.status(401).json({ success: false, message: 'Unauthorized: No session' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Contains id and role usually
-    
-    // Optionally fetch full user object if needed for checks, but simple decoded data is often enough
-    // req.user = await User.findById(decoded.id).select('-password');
+    req.user = session.user; // Contains email, name, role, etc.
     
     next();
   } catch (error) {
-    return res.status(401).json({ success: false, message: 'Unauthorized: Invalid token' });
+    return res.status(401).json({ success: false, message: 'Unauthorized: Invalid session' });
   }
 };
 

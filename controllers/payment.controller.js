@@ -3,35 +3,36 @@ const Book = require('../models/Book');
 
 const createPaymentIntent = async (req, res, next) => {
   try {
-    const { bookId } = req.body;
+    const { bookId, amount: frontendAmount, isCart } = req.body;
     
-    if (!bookId) {
-      return res.status(400).json({ success: false, message: 'Book ID is required' });
+    if (!isCart && !bookId) {
+      return res.status(400).json({ success: false, message: 'Book ID or isCart flag is required' });
     }
 
-    const book = await Book.findById(bookId);
-    if (!book) {
-      return res.status(404).json({ success: false, message: 'Book not found' });
+    let amount = frontendAmount ? frontendAmount * 100 : 1600; // default 1600 cents
+    
+    if (!isCart && bookId && !bookId.startsWith('ol-') && !bookId.startsWith('gb-')) {
+      const book = await Book.findById(bookId);
+      if (!book) {
+        return res.status(404).json({ success: false, message: 'Book not found' });
+      }
+      if (book.availability !== 'available') {
+        return res.status(400).json({ success: false, message: 'Book is not available for delivery' });
+      }
+      amount = book.deliveryFee * 100; 
     }
-
-    if (book.availability !== 'available') {
-      return res.status(400).json({ success: false, message: 'Book is not available for delivery' });
-    }
-
-    // Amount is fetched authoritatively from the DB
-    const amount = book.deliveryFee * 100; // Stripe expects cents
 
     // Create a PaymentIntent with the order amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount,
+      amount: Math.round(amount), // ensure integer
       currency: 'usd',
       // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
       automatic_payment_methods: {
         enabled: true,
       },
       metadata: {
-        bookId: book._id.toString(),
-        userEmail: req.user.email
+        bookId: isCart ? 'cart_checkout' : String(bookId),
+        userEmail: req.user?.email || 'guest@example.com'
       }
     });
 

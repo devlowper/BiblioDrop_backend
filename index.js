@@ -31,8 +31,13 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+const { toNodeHandler } = require('better-auth/node');
+const { auth } = require('./config/auth');
+
 // Routes
-app.use('/api', authRoutes);
+app.all(["/api/auth", "/api/auth/{*path}"], toNodeHandler(auth));
+// app.use('/api', authRoutes); // Custom auth is replaced by better-auth
+
 app.use('/api/users', userRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/deliveries', deliveryRoutes);
