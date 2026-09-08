@@ -69,7 +69,7 @@ const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REND
 const auth = betterAuth({
   baseURL,
   basePath,
-  secret: process.env.BETTER_AUTH_SECRET,
+  secret: process.env.BETTER_AUTH_SECRET || 'ba_v65ljyniq46bpy6921kqjy6sokx8200j',
   plugins: process.env.BETTER_AUTH_API_KEY ? [dash()] : [],
   trustedOrigins: [
     process.env.CLIENT_ORIGIN,
@@ -82,6 +82,7 @@ const auth = betterAuth({
   ].filter(Boolean),
   advanced: {
     useSecureCookies: isProduction,
+    disableCSRFCheck: true,
     defaultCookieAttributes: {
       sameSite: isProduction ? 'none' : 'lax',
       secure: isProduction ? true : false,
