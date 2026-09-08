@@ -21,10 +21,12 @@ client.connect().catch((err) => {
  * NEVER use https://kv.better-auth.com/... (that is the dashboard/infra URL).
  */
 function resolveAuthUrl() {
+  const isProd = process.env.NODE_ENV === 'production' || !!process.env.RENDER_EXTERNAL_URL;
+
   const candidates = [
+    process.env.RENDER_EXTERNAL_URL,
     process.env.BETTER_AUTH_URL,
     process.env.BETTER_AUTH_BASE_URL,
-    process.env.RENDER_EXTERNAL_URL, // auto on Render
     'http://localhost:5000',
   ].filter(Boolean);
 
@@ -36,6 +38,11 @@ function resolveAuthUrl() {
         console.warn(
           `[auth] Ignoring invalid BETTER_AUTH_URL (${raw}). Use your Render backend URL instead.`
         );
+        continue;
+      }
+
+      // In production/Render, skip localhost URLs so fallback works
+      if (isProd && (u.hostname === 'localhost' || u.hostname === '127.0.0.1')) {
         continue;
       }
 
@@ -57,6 +64,8 @@ function resolveAuthUrl() {
 const { baseURL, basePath } = resolveAuthUrl();
 console.log(`[auth] better-auth baseURL=${baseURL} basePath=${basePath}`);
 
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.RENDER_EXTERNAL_URL;
+
 const auth = betterAuth({
   baseURL,
   basePath,
@@ -69,7 +78,14 @@ const auth = betterAuth({
     'https://bibliodrop.netlify.app',
     'https://bibliodrop.vercel.app',
     'https://online-book-delivery.vercel.app',
+    'https://bibliodrop-backend-y734.onrender.com',
   ].filter(Boolean),
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProduction ? true : false,
+    },
+  },
   database: mongodbAdapter(client.db()),
   user: {
     additionalFields: {
