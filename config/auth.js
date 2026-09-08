@@ -88,6 +88,9 @@ const auth = betterAuth({
       secure: isProduction ? true : false,
     },
   },
+  onAPIError: {
+    errorURL: process.env.CLIENT_ORIGIN ? `${process.env.CLIENT_ORIGIN}/login` : 'https://bibliodrop.netlify.app/login',
+  },
   database: mongodbAdapter(client.db()),
   user: {
     additionalFields: {
