@@ -87,6 +87,9 @@ const auth = betterAuth({
       sameSite: isProduction ? 'none' : 'lax',
       secure: isProduction ? true : false,
     },
+    ipAddress: {
+      ipAddressHeaders: ["x-forwarded-for"],
+    },
   },
   onAPIError: {
     errorURL: process.env.CLIENT_ORIGIN ? `${process.env.CLIENT_ORIGIN}/login` : 'https://bibliodrop.netlify.app/login',
