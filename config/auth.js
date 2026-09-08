@@ -13,38 +13,60 @@ client.connect().catch((err) => {
 });
 
 /**
- * better-auth expects:
- *   baseURL  = origin only (e.g. https://api.example.com)
- *   basePath = /api/auth  (default)
- * Env may be either the origin or full ".../api/auth" URL.
+ * BETTER_AUTH_URL must be YOUR backend origin (Render URL), e.g.
+ *   https://bibliodrop-backend-y734.onrender.com
+ * or
+ *   https://bibliodrop-backend-y734.onrender.com/api/auth
+ *
+ * NEVER use https://kv.better-auth.com/... (that is the dashboard/infra URL).
  */
-function resolveAuthUrl(raw) {
-  const fallback = 'http://localhost:5000';
-  try {
-    const u = new URL(raw || fallback);
-    const path = u.pathname.replace(/\/$/, '');
-    if (!path || path === '/') {
-      return { baseURL: u.origin, basePath: '/api/auth' };
+function resolveAuthUrl() {
+  const candidates = [
+    process.env.BETTER_AUTH_URL,
+    process.env.BETTER_AUTH_BASE_URL,
+    process.env.RENDER_EXTERNAL_URL, // auto on Render
+    'http://localhost:5000',
+  ].filter(Boolean);
+
+  for (const raw of candidates) {
+    try {
+      const u = new URL(raw);
+      // Ignore Better Auth cloud/dashboard hosts — they break local route matching
+      if (u.hostname.includes('better-auth.com') || u.hostname.includes('kv.better-auth')) {
+        console.warn(
+          `[auth] Ignoring invalid BETTER_AUTH_URL (${raw}). Use your Render backend URL instead.`
+        );
+        continue;
+      }
+
+      const path = u.pathname.replace(/\/$/, '');
+      // Always serve auth under /api/auth on this Express app
+      return {
+        baseURL: u.origin,
+        basePath: '/api/auth',
+        raw,
+      };
+    } catch {
+      /* try next */
     }
-    return { baseURL: u.origin, basePath: path };
-  } catch {
-    return { baseURL: fallback, basePath: '/api/auth' };
   }
+
+  return { baseURL: 'http://localhost:5000', basePath: '/api/auth', raw: null };
 }
 
-const { baseURL, basePath } = resolveAuthUrl(
-  process.env.BETTER_AUTH_URL || process.env.BETTER_AUTH_BASE_URL
-);
+const { baseURL, basePath } = resolveAuthUrl();
+console.log(`[auth] better-auth baseURL=${baseURL} basePath=${basePath}`);
 
 const auth = betterAuth({
   baseURL,
   basePath,
   secret: process.env.BETTER_AUTH_SECRET,
-  plugins: [dash()],
+  plugins: process.env.BETTER_AUTH_API_KEY ? [dash()] : [],
   trustedOrigins: [
     process.env.CLIENT_ORIGIN,
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://bibliodrop.netlify.app',
     'https://bibliodrop.vercel.app',
     'https://online-book-delivery.vercel.app',
   ].filter(Boolean),
@@ -66,7 +88,6 @@ const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      enabled: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     },
   },
 });
