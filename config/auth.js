@@ -24,8 +24,8 @@ function resolveAuthUrl() {
   const isProd = process.env.NODE_ENV === 'production' || !!process.env.RENDER_EXTERNAL_URL;
 
   const candidates = [
-    process.env.RENDER_EXTERNAL_URL,
     process.env.BETTER_AUTH_URL,
+    process.env.RENDER_EXTERNAL_URL,
     process.env.BETTER_AUTH_BASE_URL,
     'http://localhost:5000',
   ].filter(Boolean);
