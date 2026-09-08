@@ -81,6 +81,7 @@ const auth = betterAuth({
     'https://bibliodrop-backend-y734.onrender.com',
   ].filter(Boolean),
   advanced: {
+    useSecureCookies: isProduction,
     defaultCookieAttributes: {
       sameSite: isProduction ? 'none' : 'lax',
       secure: isProduction ? true : false,

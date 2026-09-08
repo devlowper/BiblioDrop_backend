@@ -16,6 +16,7 @@ const paymentRoutes = require('./routes/payment.routes');
 const statRoutes = require('./routes/stat.routes');
 
 const app = express();
+app.set('trust proxy', 1);
 
 connectDB();
 
